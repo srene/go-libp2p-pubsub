@@ -990,6 +990,7 @@ func (gs *GossipSubRouter) Publish(msg *Message) {
 		return
 	}
 
+	fmt.Println("Publishing to ", len(gs.mesh[topic]), " peers")
 	if gs.floodPublish && from == gs.p.host.ID() {
 		for p := range tmap {
 			_, direct := gs.direct[p]
