@@ -35,8 +35,8 @@ var (
 	GossipSubDhi                              = 12
 	GossipSubDscore                           = 4
 	GossipSubDout                             = 2
-	GossipSubHistoryLength                    = 5
-	GossipSubHistoryGossip                    = 3
+	GossipSubHistoryLength                    = 50
+	GossipSubHistoryGossip                    = 30
 	GossipSubDlazy                            = 6
 	GossipSubGossipFactor                     = 0.25
 	GossipSubGossipRetransmission             = 3
@@ -629,6 +629,8 @@ func (gs *GossipSubRouter) HandleRPC(rpc *RPC) {
 
 func (gs *GossipSubRouter) handleIHave(p peer.ID, ctl *pb.ControlMessage) []*pb.ControlIWant {
 	// we ignore IHAVE gossip from any peer whose score is below the gossip threshold
+
+	fmt.Println("Receiveing gossip")
 	score := gs.score.Score(p)
 	if score < gs.gossipThreshold {
 		log.Debugf("IHAVE: ignoring peer %s with score below threshold [score = %f]", p, score)
@@ -697,6 +699,8 @@ func (gs *GossipSubRouter) handleIHave(p peer.ID, ctl *pb.ControlMessage) []*pb.
 
 func (gs *GossipSubRouter) handleIWant(p peer.ID, ctl *pb.ControlMessage) []*pb.Message {
 	// we don't respond to IWANT requests from any peer whose score is below the gossip threshold
+
+	fmt.Println("Handle iwant")
 	score := gs.score.Score(p)
 	if score < gs.gossipThreshold {
 		log.Debugf("IWANT: ignoring peer %s with score below threshold [score = %f]", p, score)
@@ -1039,7 +1043,7 @@ func (gs *GossipSubRouter) Publish(msg *Message) {
 		if pid == from || pid == peer.ID(msg.GetFrom()) {
 			continue
 		}
-
+		fmt.Println("Sending messsage to ", pid)
 		gs.sendRPC(pid, out)
 	}
 }
@@ -1736,8 +1740,10 @@ func (gs *GossipSubRouter) emitGossip(topic string, exclude map[peer.ID]struct{}
 		}
 	}
 
+	fmt.Println("Peers ", len(peers))
+
 	if len(peers) < gs.params.Dlo {
-		for p := range gs.p.topics[topic] {
+		for p := range gs.mesh[topic] {
 			if gs.feature(GossipSubFeatureMesh, gs.peers[p]) {
 				peers = append(peers, p)
 			}
@@ -1746,6 +1752,9 @@ func (gs *GossipSubRouter) emitGossip(topic string, exclude map[peer.ID]struct{}
 			}
 		}
 	}
+
+	fmt.Println("Peers2 ", len(peers))
+
 	target := gs.params.Dlazy
 	factor := int(gs.params.GossipFactor * float64(len(peers)))
 	if factor > target {
@@ -1770,6 +1779,7 @@ func (gs *GossipSubRouter) emitGossip(topic string, exclude map[peer.ID]struct{}
 			shuffleStrings(mids)
 			copy(peerMids, mids)
 		}
+		fmt.Println("Enqueue gossip")
 		gs.enqueueGossip(p, &pb.ControlIHave{TopicID: &topic, MessageIDs: peerMids})
 	}
 }
