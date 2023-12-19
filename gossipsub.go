@@ -1043,7 +1043,7 @@ func (gs *GossipSubRouter) Publish(msg *Message) {
 		if pid == from || pid == peer.ID(msg.GetFrom()) {
 			continue
 		}
-		fmt.Println("Sending messsage to ", pid)
+		fmt.Println("Sending messsage to ", pid, " for topic ", topic)
 		gs.sendRPC(pid, out)
 	}
 }
